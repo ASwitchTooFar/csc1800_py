@@ -17,6 +17,7 @@
 # Used for iterating over standard in (sys.stdin).
 import sys
 
+
 # Used only in testing to print dictionaries in a way which is readable.
 from pprint import pprint
 
