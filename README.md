@@ -1,1 +1,1 @@
-# csc1800_py
+# Villanova CSC-1800 Project #2
