@@ -44,7 +44,7 @@ def event_marriage(person_1, person_2) :
         }})
 
     else :
-        family_tree[person_1][2] = person_1
+        family_tree[person_1][2] = person_2
 
     if person_2 not in family_tree :
         family_tree.update({person_2: {
@@ -54,7 +54,7 @@ def event_marriage(person_1, person_2) :
         }})
 
     else :
-        family_tree[person_2][2] = person_2
+        family_tree[person_2][2] = person_1
 
 
 # Makes sure the parents exist and are married, then creates the child and
@@ -97,33 +97,40 @@ def x_query_unrelated(non_relative, person) :
     print('Is ' + non_relative + ' not a relative of ' + person + '?')
 
 
-#
+# Returns a sorted list of the person's children from which duplicates have been removed.
 def w_query_child(person) :
-    print('List all children of ' + person + '.')
+    return sorted(family_tree[person][3])
 
 
-#
+# Returns a sorted list of the person's siblings from which duplicates have been removed.
 def w_query_sibling(person) :
-    print('List all siblings of ' + person + '.')
+    siblings = []
+
+    for parent in family_tree[person][1] :
+        siblings = list(set(siblings + family_tree[parent][3]))
+
+    siblings.remove(person)
+
+    return sorted(siblings)
 
 
 #
 def w_query_ancestor(person) :
-    print('List all ancestors of ' + person + '.')
+    return ['List all ancestors of ' + person + '.']
 
 
 #
 def w_query_cousin(person, degree) :
-    print('List all ' + degree + ' cousins of ' + person + '.')
+    return ['List all ' + degree + ' degree cousins of ' + person + '.']
 
 
 #
 def w_query_unrelated(person) :
-    print('List all people unrelated to ' + person + '.')
+    return ['List all people unrelated to ' + person + '.']
 
 
 
-# GETTERS, SETTERS, HELPER METHODS, ETC
+# HELPER METHODS
 
 
 
@@ -154,19 +161,19 @@ def parse_line(split_line) :
 
     if split_line[0] == 'W' :
         if (split_line[1] == 'child'):
-            w_query_child(split_line[2])
+            print(*w_query_child(split_line[2]), sep='\n')
 
         elif (split_line[1] == 'sibling'):
-            w_query_sibling(split_line[2])
+            print(*w_query_sibling(split_line[2]), sep='\n')
 
         elif (split_line[1] == 'ancestor'):
-            w_query_ancestor(split_line[2])
+            print(*w_query_ancestor(split_line[2]), sep='\n')
 
         elif (split_line[1] == 'cousin'):
-            w_query_cousin(split_line[3], split_line[2])
+            print(*w_query_cousin(split_line[3], split_line[2]), sep='\n')
 
         else :
-            w_query_unrelated(split_line[2])
+            print(*w_query_unrelated(split_line[2]), sep='\n')
 
 
 # Iterates over standard in, determines the type of event / query for each line,
