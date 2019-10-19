@@ -91,7 +91,6 @@ def x_query_ancestor(ancestor, person) :
 def x_query_cousin(cousin, degree, person) :
     print('Is ' + cousin + ' a ' + degree + ' degree cousin of ' + person + '?')
 
-
 #
 def x_query_unrelated(non_relative, person) :
     print('Is ' + non_relative + ' not a relative of ' + person + '?')
@@ -100,7 +99,6 @@ def x_query_unrelated(non_relative, person) :
 # Returns a sorted list of the person's children from which duplicates have been removed.
 def w_query_child(person) :
     return sorted(family_tree[person][3])
-
 
 # Returns a sorted list of the person's siblings from which duplicates have been removed.
 def w_query_sibling(person) :
@@ -114,15 +112,136 @@ def w_query_sibling(person) :
     return sorted(siblings)
 
 
-#
-def w_query_ancestor(person) :
-    return ['List all ancestors of ' + person + '.']
+#TO DO: CHECK IF PERSON EXISTS
+def w_query_ancestor(person, list) :
+    if len(family_tree[person][1]) < 2: #if missing a parent
+        return list
+
+    else :
+        w_query_ancestor(family_tree[person][1][0],list)
+        list.append(family_tree[person][1][0])
+
+        w_query_ancestor(family_tree[person][1][1],list)
+        list.append(family_tree[person][1][1])
+
+    return list
 
 
-#
-def w_query_cousin(person, degree) :
-    return ['List all ' + degree + ' degree cousins of ' + person + '.']
+#this method is used in get_zero_removed_cousins
+#level is the degree of cousin
+#this method will return the proper great (*) gradnparents according to the degree of cousins
+#1st cousins retrieves grandparents, 2nd cousins retrieves great grandparents, etc.
+def get_grandparents(person, level, list) :
+    if len(family_tree[person][1]) < 2: # if missing a parent
+        return list
 
+    if (level == 0):
+        list.append(family_tree[person][1][0])
+        list.append(family_tree[person][1][1])
+
+    else:
+        get_grandparents(family_tree[person][1][0], level -1, list)
+        get_grandparents(family_tree[person][1][1], level -1, list)
+
+    return list
+
+#this method is used in get_zero_removed_cousins
+#returns all people on level zero, starting from the selected grandparent
+#level = degreee of cousins
+#example - people on the zero level of a grandparent are zero removed first cousins
+#        - people on the zero level of a greatgranparent are zero removed second cousins
+def get_descendents_at_zero_level(grandparent, level, list) :
+    if (len(w_query_child(grandparent)) ==  0):
+        return list
+
+    if (level == 0):
+        list += w_query_child(grandparent)
+        return list
+
+    for descendent in w_query_child(grandparent) :
+        get_descendents_at_zero_level(descendent, level - 1, list);
+
+    return list
+
+
+#returns ALL descendents of person
+def get_descendents(person, list):
+    if (len(w_query_child(person)) ==  0):
+        return list
+
+    else:
+        for child in w_query_child(person):
+            get_descendents(child, list)
+            list.append(child)
+
+    return list
+
+
+#get zero removed cousins
+def get_zero_removed_cousins (starterPerson, degree) :
+    grandparents = [] #selected (great)* grandparents depending on degree
+    descendents_at_zero_level = []
+    flagged = [] #ancestors of starterPerson that must be removed
+
+    #obtain the needed (great)* grandparents according to the degree
+    grandparents += get_grandparents(starterPerson, degree, [])
+
+
+    #Flag people who have starterPerson as a descendent
+    for i in grandparents:
+        for j in w_query_child(i):
+            if (starterPerson in get_descendents(j, [])) :
+                flagged.append(j)
+
+
+    #add to descendents_at_zero_level
+    for x in grandparents:
+        descendents_at_zero_level += (get_descendents_at_zero_level(x, degree, []))
+
+
+    #only add people who DO NOT have a flagged person as an ancestor
+    zero_removed_cousins = []
+    for x in descendents_at_zero_level:
+        if not (any( elem in w_query_ancestor(x, []) for elem in flagged)):
+            zero_removed_cousins.append(x)
+
+    return zero_removed_cousins
+
+
+#final cousin method that returns ALL the nth zero_removed_cousins
+#this includes:
+#the nth cousins of the person's ancestors
+#the descendents of the persons zero_removed_cousins
+def w_query_cousin(person, degree):
+    zero_removed = []
+    ancestors = []
+    cousins = []
+
+    if (degree == 0) : #exception for when degree is zero
+        zero_removed += w_query_sibling(person)
+        for x in zero_removed:
+            cousins += (get_descendents(x,[])) #add decendents of zero removed
+
+        cousins += zero_removed
+        return cousins
+
+    #for any other degree above zero...code below
+
+    #get ancestors of person
+    ancestors += w_query_ancestor(person, [])
+    #get zero removed cousins of ancestor
+    zero_removed += get_zero_removed_cousins(person, degree)
+
+
+    #add the zero removed cousins of ALL the ancestors
+    for ancestor in ancestors:
+        cousins += get_zero_removed_cousins(ancestor, degree)
+
+    for x in zero_removed:
+        cousins += get_descendents(x,[])
+
+    cousins += zero_removed
+    return cousins;
 
 #
 def w_query_unrelated(person) :
@@ -139,7 +258,6 @@ def parse_line(split_line) :
     if split_line[0] == 'E' :
         if len(split_line) == 3 :
             event_marriage(split_line[1], split_line[2])
-
         else :
             event_child(split_line[1], split_line[2], split_line[3])
 
@@ -151,10 +269,12 @@ def parse_line(split_line) :
             x_query_sibling(split_line[1], split_line[3])
 
         elif (split_line[2] == 'ancestor') :
-            x_query_ancestor(split_line[1], split_line[3])
+            print("test")
+            #ancestors = list(set(x_query_ancestor(split_line[1], split_line[3])))
+            #print(ancestors)
 
         elif (split_line[2] == 'cousin'):
-            x_query_cousin(split_line[1], split_line[3], split_line[4])
+            x_query_cousin(split_line[1], int(split_line[3]), split_line[4])
 
         else :
             x_query_unrelated(split_line[1], split_line[3])
@@ -167,10 +287,18 @@ def parse_line(split_line) :
             print(*w_query_sibling(split_line[2]), sep='\n')
 
         elif (split_line[1] == 'ancestor'):
-            print(*w_query_ancestor(split_line[2]), sep='\n')
+            print("List the ancestors of " + split_line[2])
+            ancestors = w_query_ancestor(split_line[2], [])
+            #REMOVE DUPLICATES
+            ancestors = sorted(list(dict.fromkeys(ancestors)))
+            print(*ancestors, sep='\n')
+
 
         elif (split_line[1] == 'cousin'):
-            print(*w_query_cousin(split_line[3], split_line[2]), sep='\n')
+            cousins = (w_query_cousin(split_line[3], int(split_line[2])))
+            #REMOVE DUPLICATES
+            cousins = sorted(list(dict.fromkeys(cousins)))
+            print(*cousins, sep='\n')
 
         else :
             print(*w_query_unrelated(split_line[2]), sep='\n')
@@ -184,6 +312,7 @@ def main():
         print(current_line)
         parse_line(current_line.split())
         print()
+
 
     pprint(family_tree)
 
