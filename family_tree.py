@@ -138,10 +138,7 @@ def w_query_sibling(person) :
 
 # Returns all of a person's ancestors (recursively).
 def w_query_ancestor(person, list) :
-    if person not in family_tree : #if person doesn't exist
-        return list
-
-    elif len(family_tree[person][1]) < 2: #if missing a parent
+    if len(family_tree[person][1]) < 2: #if missing a parent
         return list
 
     else :
