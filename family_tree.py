@@ -166,8 +166,6 @@ def w_query_ancestor(person) :
                 all_ancestors.append(family_tree[person][1][1])
                 ancestors.extend(get_ancestors(family_tree[person][1][1]))
 
-            ancestors.extend(family_tree[person][1])
-
             all_ancestors.extend(ancestors)
 
         return ancestors
