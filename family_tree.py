@@ -17,7 +17,6 @@
 # Used for iterating over standard in (sys.stdin).
 import sys
 
-
 # Example person (key 1 is a list of parents, key 2 is spouse, key 3 is children):
 # family_tree = {
 #     person_name_string : {
@@ -91,7 +90,7 @@ def x_query_sibling(sibling, person) :
 # Leverages existing 'W' query to check whether an individual is in the list of the
 # person's ancestors.
 def x_query_ancestor(ancestor, person) :
-    if ancestor in w_query_ancestor(person, []) :
+    if ancestor in w_query_ancestor(person) :
         print('Yes')
 
     else :
@@ -137,18 +136,45 @@ def w_query_sibling(person) :
 
 
 # Returns all of a person's ancestors (recursively).
-def w_query_ancestor(person, list) :
-    if len(family_tree[person][1]) < 2: #if missing a parent
-        return list
+#def w_query_ancestor(person, list) :
+#    if len(family_tree[person][1]) < 2: #if missing a parent
+#        return list
+#
+#    else :
+#        w_query_ancestor(family_tree[person][1][0],list)
+#        list.append(family_tree[person][1][0])
+#
+#        w_query_ancestor(family_tree[person][1][1],list)
+#        list.append(family_tree[person][1][1])
+#
+#    return list
 
-    else :
-        w_query_ancestor(family_tree[person][1][0],list)
-        list.append(family_tree[person][1][0])
 
-        w_query_ancestor(family_tree[person][1][1],list)
-        list.append(family_tree[person][1][1])
+# Returns all of a person's ancestors (recursively).
+def w_query_ancestor(person) :
+    all_ancestors = []
 
-    return list
+    def get_ancestors(person) :
+        ancestors = []
+
+        if len(family_tree[person][1]) == 2 :
+            if family_tree[person][1][0] not in all_ancestors :
+                all_ancestors.append(family_tree[person][1][0])
+                ancestors.extend(get_ancestors(family_tree[person][1][0]))
+
+            if family_tree[person][1][1] not in all_ancestors :
+                all_ancestors.append(family_tree[person][1][1])
+                ancestors.extend(get_ancestors(family_tree[person][1][1]))
+
+            ancestors.extend(family_tree[person][1])
+
+            all_ancestors.extend(ancestors)
+
+        return ancestors
+
+    get_ancestors(person)
+
+    return list(set(all_ancestors))
 
 
 #final cousin method that returns ALL the nth zero_removed_cousins
@@ -171,7 +197,7 @@ def w_query_cousin(person, degree):
     #for any other degree above zero...code below
 
     #get ancestors of person
-    ancestors += w_query_ancestor(person, [])
+    ancestors += w_query_ancestor(person)
     #get zero removed cousins of ancestor
     zero_removed += get_zero_removed_cousins(person, degree)
 
@@ -181,17 +207,17 @@ def w_query_cousin(person, degree):
         cousins += get_zero_removed_cousins(ancestor, degree)
 
     for x in zero_removed:
-        cousins += get_descendents(x,[])
+        cousins += get_descendents(x, [])
 
     cousins += zero_removed
     return cousins;
 
 
 # Finds all ancestors of a person then all decendants of those ancestors. After removing those from
-# the list of all people, only those whom are unrelated remain.
+# the list of all people, only those who are unrelated remain.
 def w_query_unrelated(person) :
     unrelated = list(family_tree.keys())
-    ancestors = list(set(w_query_ancestor(person, [])))
+    ancestors = list(set(w_query_ancestor(person)))
 
     for ancestor in ancestors :
         descendants = get_descendents(ancestor, [])
@@ -283,7 +309,7 @@ def get_zero_removed_cousins (starterPerson, degree) :
     #only add people who DO NOT have a flagged person as an ancestor
     zero_removed_cousins = []
     for x in descendents_at_zero_level:
-        if not (any( elem in w_query_ancestor(x, []) for elem in flagged)):
+        if not (any( elem in w_query_ancestor(x) for elem in flagged)):
             zero_removed_cousins.append(x)
 
     return zero_removed_cousins
@@ -358,7 +384,7 @@ def parse_line(split_line) :
 
         elif (split_line[1] == 'ancestor') :
             if split_line[2] in family_tree :
-                ancestors = w_query_ancestor(split_line[2], [])
+                ancestors = w_query_ancestor(split_line[2])
                 #REMOVE DUPLICATES
                 ancestors = sorted(list(dict.fromkeys(ancestors)))
                 print(*ancestors, sep='\n')
