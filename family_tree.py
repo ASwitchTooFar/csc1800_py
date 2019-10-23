@@ -152,27 +152,21 @@ def w_query_sibling(person) :
 
 # Returns all of a person's ancestors (recursively).
 def w_query_ancestor(person) :
-    all_ancestors = []
+    ancestors = []
 
-    def get_ancestors(person) :
-        ancestors = []
-
+    def ancestor_recurse(person) :
         if len(family_tree[person][1]) == 2 :
-            if family_tree[person][1][0] not in all_ancestors :
-                all_ancestors.append(family_tree[person][1][0])
-                ancestors.extend(get_ancestors(family_tree[person][1][0]))
+            if family_tree[person][1][0] not in ancestors :
+                ancestors.append(family_tree[person][1][0])
+                ancestor_recurse(family_tree[person][1][0])
 
-            if family_tree[person][1][1] not in all_ancestors :
-                all_ancestors.append(family_tree[person][1][1])
-                ancestors.extend(get_ancestors(family_tree[person][1][1]))
+            if family_tree[person][1][1] not in ancestors :
+                ancestors.append(family_tree[person][1][1])
+                ancestor_recurse(family_tree[person][1][1])
 
-            all_ancestors.extend(ancestors)
+    ancestor_recurse(person)
 
-        return ancestors
-
-    get_ancestors(person)
-
-    return list(set(all_ancestors))
+    return list(set(ancestors))
 
 
 #final cousin method that returns ALL the nth zero_removed_cousins
@@ -187,7 +181,7 @@ def w_query_cousin(person, degree):
     if (degree == 0) : #exception for when degree is zero
         zero_removed += w_query_sibling(person)
         for x in zero_removed:
-            cousins += (get_descendents(x,[])) #add decendents of zero removed
+            cousins += (get_descendents(x)) #add decendents of zero removed
 
         cousins += zero_removed
         return cousins
@@ -205,7 +199,7 @@ def w_query_cousin(person, degree):
         cousins += get_zero_removed_cousins(ancestor, degree)
 
     for x in zero_removed:
-        cousins += get_descendents(x, [])
+        cousins += get_descendents(x)
 
     cousins += zero_removed
     return cousins;
@@ -218,7 +212,7 @@ def w_query_unrelated(person) :
     ancestors = list(set(w_query_ancestor(person)))
 
     for ancestor in ancestors :
-        descendants = get_descendents(ancestor, [])
+        descendants = get_descendents(ancestor)
 
         try:
             unrelated.remove(ancestor)
@@ -273,16 +267,34 @@ def get_descendents_at_zero_level(grandparent, level, list) :
 
 
 #returns ALL descendents of person
-def get_descendents(person, list):
-    if (len(w_query_child(person)) ==  0):
-        return list
+#def get_descendents(person, list):
+#    if (len(w_query_child(person)) ==  0):
+#        return list
+#
+#    else:
+#        for child in w_query_child(person):
+#            get_descendents(child, list)
+#            list.append(child)
+#
+#    return list
 
-    else:
-        for child in w_query_child(person):
-            get_descendents(child, list)
-            list.append(child)
 
-    return list
+# Returns all of a person's descendents (recursively).
+def get_descendents(person) :
+    descendents = []
+
+    def descendent_recurse(person) :
+        children = w_query_child(person)
+
+        if len(children) > 0 :
+            for child in children :
+                if child not in descendents :
+                    descendents.append(child)
+                    descendent_recurse(child)
+
+    descendent_recurse(person)
+
+    return list(set(descendents))
 
 
 #get zero removed cousins
@@ -297,7 +309,7 @@ def get_zero_removed_cousins (starterPerson, degree) :
     #Flag people who have starterPerson as a descendent
     for i in grandparents:
         for j in w_query_child(i):
-            if (starterPerson in get_descendents(j, [])) :
+            if (starterPerson in get_descendents(j)) :
                 flagged.append(j)
 
     #add to descendents_at_zero_level
