@@ -284,13 +284,10 @@ def get_descendents(person) :
     descendents = []
 
     def descendent_recurse(person) :
-        children = w_query_child(person)
-
-        if len(children) > 0 :
-            for child in children :
-                if child not in descendents :
-                    descendents.append(child)
-                    descendent_recurse(child)
+        for child in w_query_child(person) :
+            if child not in descendents :
+                descendents.append(child)
+                descendent_recurse(child)
 
     descendent_recurse(person)
 
